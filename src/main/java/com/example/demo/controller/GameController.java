@@ -5,6 +5,7 @@ import com.example.demo.game.BetRequestDTO;
 import com.example.demo.game.GameResult;
 import com.example.demo.service.GameService;
 import com.example.demo.service.LeaderBoardService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -26,12 +27,17 @@ public class GameController {
     @PostMapping("/games/{gameName}")
     public ResponseEntity<?> playGame(@RequestBody BetRequestDTO betRequestDTO, @PathVariable String gameName) {
         final GameResult gameResult = gameService.playGame(betRequestDTO, gameName);
-        return new ResponseEntity<>(gameResult, HttpStatus.OK);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("playerId",
+                betRequestDTO.playerId());
+        return ResponseEntity.ok()
+                .headers(responseHeaders)
+                .body(gameResult);
     }
 
     @GetMapping("/leaderBoard")
     @Async
-    public CompletableFuture<?> getLeaderBoard(){
+    public CompletableFuture<?> getLeaderBoard() {
         final LeaderBoardDTO leaderBoardDTOResponse = leaderBoardService.getLeaderBoard();
         return CompletableFuture.completedFuture(new ResponseEntity<>(leaderBoardDTOResponse, HttpStatus.OK));
     }
