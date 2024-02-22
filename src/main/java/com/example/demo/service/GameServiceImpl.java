@@ -5,7 +5,8 @@ import com.example.demo.exception.GameNotSupportedException;
 import com.example.demo.exception.InsufficientFundsException;
 import com.example.demo.exception.PlayerNotFoundException;
 import com.example.demo.game.*;
-import com.example.demo.repository.BetRepository;
+import com.example.demo.model.BetOutcome;
+import com.example.demo.repository.BetOutcomeRepository;
 import com.example.demo.repository.PlayerRepository;
 import lombok.val;
 import org.slf4j.Logger;
@@ -19,13 +20,13 @@ import java.text.MessageFormat;
 public class GameServiceImpl implements GameService {
     private final PlayerRepository playerRepository;
     private final WalletTransactionService walletTransactionService;
-    private final BetRepository betRepository;
+    private final BetOutcomeRepository betOutcomeRepository;
     private final Logger logger = LoggerFactory.getLogger(GameServiceImpl.class);
 
-    public GameServiceImpl(PlayerRepository playerRepository, WalletTransactionService walletTransactionService, BetRepository betRepository) {
+    public GameServiceImpl(PlayerRepository playerRepository, WalletTransactionService walletTransactionService, BetOutcomeRepository betOutcomeRepository) {
         this.playerRepository = playerRepository;
         this.walletTransactionService = walletTransactionService;
-        this.betRepository = betRepository;
+        this.betOutcomeRepository = betOutcomeRepository;
     }
 
     @Override
@@ -48,12 +49,21 @@ public class GameServiceImpl implements GameService {
 
         walletTransactionService.saveBetAndUpdateBalanceTransactions(betRequestDTO.betReferenceId(), betRequestDTO.betAmount(), gameResult.getWinAmount(), betRequestDTO.playerId());
 
+        //save bet outcome
+        betOutcomeRepository.save(BetOutcome.builder()
+                .gameId(gameName)
+                .playerId(betRequestDTO.playerId())
+                .id(betRequestDTO.betReferenceId())
+                .betAmount(betRequestDTO.betAmount())
+                .winAmount(gameResult.getWinAmount())
+                .build());
+
         return gameResult;
     }
 
     void validateBetRequest(BetRequestDTO betDTORequest) {
         //idempotency check
-        val existingBet = betRepository.findById(betDTORequest.betReferenceId());
+        val existingBet = betOutcomeRepository.findById(betDTORequest.betReferenceId());
         if (existingBet.isPresent()) {
             throw new BetAlreadyProcessedException(MessageFormat.format("Bet with reference id: {0} has already been processed", betDTORequest.betReferenceId()));
         }

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,6 +21,7 @@ public class WalletTransaction {
     String referenceId; //in case of bet , the bet id, in case of transfer, the transfer id
     String walletId;
     String playerId;
+    @Field(targetType = FieldType.DECIMAL128)
     BigDecimal amount;
     TransactionType transactionType;
     Instant createdDate;

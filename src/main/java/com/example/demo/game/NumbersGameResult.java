@@ -7,8 +7,6 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
-//@Data
-//@Builder
 public class NumbersGameResult extends GameResult {
     private final int betRequestNumber;
     private final int betResultNumber;

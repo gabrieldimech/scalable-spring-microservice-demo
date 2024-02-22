@@ -4,8 +4,10 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +20,8 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return "test";
     }
 
-    @Override
+    //@Override
+    @Bean
     public MongoClient mongoClient() {
         ConnectionString connectionString = new ConnectionString("mongodb://root:pass@localhost:27017/test?authSource=admin");
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
@@ -31,5 +34,10 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     @Override
     public Collection getMappingBasePackages() {
         return Collections.singleton("com.example.demo.model");
+    }
+
+    @Bean
+    public MongoTemplate mongoTemplate() throws Exception {
+        return new MongoTemplate(mongoClient(), "test");
     }
 }

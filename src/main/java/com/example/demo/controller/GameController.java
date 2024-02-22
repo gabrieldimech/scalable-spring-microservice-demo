@@ -7,7 +7,10 @@ import com.example.demo.service.GameService;
 import com.example.demo.service.LeaderBoardService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 public class GameController {
@@ -21,15 +24,16 @@ public class GameController {
     }
 
     @PostMapping("/games/{gameName}")
-    ResponseEntity<?> playGame(@RequestBody BetRequestDTO betRequestDTO, @PathVariable String gameName) {
+    public ResponseEntity<?> playGame(@RequestBody BetRequestDTO betRequestDTO, @PathVariable String gameName) {
         final GameResult gameResult = gameService.playGame(betRequestDTO, gameName);
         return new ResponseEntity<>(gameResult, HttpStatus.OK);
     }
 
     @GetMapping("/leaderBoard")
-    ResponseEntity<?> getLeaderBoard(){
+    @Async
+    public CompletableFuture<?> getLeaderBoard(){
         final LeaderBoardDTO leaderBoardDTOResponse = leaderBoardService.getLeaderBoard();
-        return new ResponseEntity<>(leaderBoardDTOResponse, HttpStatus.OK);
+        return CompletableFuture.completedFuture(new ResponseEntity<>(leaderBoardDTOResponse, HttpStatus.OK));
     }
 
 }
