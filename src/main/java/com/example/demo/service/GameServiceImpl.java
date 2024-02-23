@@ -18,12 +18,14 @@ import java.text.MessageFormat;
 
 @Service
 public class GameServiceImpl implements GameService {
+    private final LeaderBoardServiceImpl leaderBoardService;
     private final PlayerRepository playerRepository;
     private final WalletTransactionService walletTransactionService;
     private final BetOutcomeRepository betOutcomeRepository;
     private final Logger logger = LoggerFactory.getLogger(GameServiceImpl.class);
 
-    public GameServiceImpl(PlayerRepository playerRepository, WalletTransactionService walletTransactionService, BetOutcomeRepository betOutcomeRepository) {
+    public GameServiceImpl(LeaderBoardServiceImpl leaderBoardService, PlayerRepository playerRepository, WalletTransactionService walletTransactionService, BetOutcomeRepository betOutcomeRepository) {
+        this.leaderBoardService = leaderBoardService;
         this.playerRepository = playerRepository;
         this.walletTransactionService = walletTransactionService;
         this.betOutcomeRepository = betOutcomeRepository;
@@ -46,6 +48,10 @@ public class GameServiceImpl implements GameService {
         logger.debug(MessageFormat.format("Bet request with reference id: {0} was validated successfully, playing Numbers Game", betRequestDTO.betReferenceId()));
 
         GameResult gameResult = game.playGameRound(betRequestDTO.betAmount(), betRequestDTO.betNumber());
+
+        if (gameResult.getWinAmount().compareTo(BigDecimal.ZERO) > 0) {
+            leaderBoardService.clearLeaderboardCache();
+        }
 
         walletTransactionService.saveBetAndUpdateBalanceTransactions(betRequestDTO.betReferenceId(), betRequestDTO.betAmount(), gameResult.getWinAmount(), betRequestDTO.playerId());
 

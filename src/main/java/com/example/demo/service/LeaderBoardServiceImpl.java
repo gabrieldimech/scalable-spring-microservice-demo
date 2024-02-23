@@ -2,14 +2,14 @@ package com.example.demo.service;
 
 import com.example.demo.dto.LeaderBoardDTO;
 import com.example.demo.dto.PlayerWinsSummaryDTO;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.SortOperation;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
@@ -20,21 +20,28 @@ public class LeaderBoardServiceImpl implements LeaderBoardService {
     public LeaderBoardServiceImpl(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
-    //@Async
+
+    @Cacheable("leaderboard")
     @Override
-    public LeaderBoardDTO getLeaderBoard() {
+    public Mono<LeaderBoardDTO> getLeaderBoard() {
         GroupOperation groupByPlayerIdAndSumWinAmount = group("playerId")
                 .sum("winAmount")
                 .as("totalWins");
 
+        MatchOperation filterPlayers = match(new Criteria("totalWins").gt(0));
+
         SortOperation sortByTotalWins = sort(Sort.by(Sort.Direction.DESC, "totalWins"));
 
         Aggregation aggregation = newAggregation(
-                groupByPlayerIdAndSumWinAmount, sortByTotalWins);
+                groupByPlayerIdAndSumWinAmount, filterPlayers, sortByTotalWins);
 
         AggregationResults<PlayerWinsSummaryDTO> result = mongoTemplate.aggregate(
                 aggregation, "bet_outcomes", PlayerWinsSummaryDTO.class);
 
-        return new LeaderBoardDTO(result.getMappedResults());
+        return Mono.just(new LeaderBoardDTO(result.getMappedResults()));
+    }
+
+    @CacheEvict(value = "leaderboard", allEntries = true)
+    public void clearLeaderboardCache() {
     }
 }

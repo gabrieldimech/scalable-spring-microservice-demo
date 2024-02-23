@@ -4,22 +4,19 @@ import com.example.demo.dto.LeaderBoardDTO;
 import com.example.demo.game.BetRequestDTO;
 import com.example.demo.game.GameResult;
 import com.example.demo.service.GameService;
-import com.example.demo.service.LeaderBoardService;
+import com.example.demo.service.LeaderBoardServiceImpl;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class GameController {
 
     private final GameService gameService;
-    private final LeaderBoardService leaderBoardService;
+    private final LeaderBoardServiceImpl leaderBoardService;
 
-    public GameController(GameService gameService, LeaderBoardService leaderBoardService) {
+    public GameController(GameService gameService, LeaderBoardServiceImpl leaderBoardService) {
         this.gameService = gameService;
         this.leaderBoardService = leaderBoardService;
     }
@@ -36,10 +33,8 @@ public class GameController {
     }
 
     @GetMapping("/leaderBoard")
-    @Async
-    public CompletableFuture<?> getLeaderBoard() {
-        final LeaderBoardDTO leaderBoardDTOResponse = leaderBoardService.getLeaderBoard();
-        return CompletableFuture.completedFuture(new ResponseEntity<>(leaderBoardDTOResponse, HttpStatus.OK));
+    public Mono<LeaderBoardDTO> getLeaderBoard() {
+        return leaderBoardService.getLeaderBoard();
     }
 
 }

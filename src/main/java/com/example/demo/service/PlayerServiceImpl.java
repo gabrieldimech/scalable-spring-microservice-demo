@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.*;
-import com.example.demo.exception.PlayerAlreadyExistsException;
 import com.example.demo.exception.PlayerNotFoundException;
 import com.example.demo.model.Currency;
 import com.example.demo.model.Player;
@@ -30,13 +29,8 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    @Transactional
+    @Transactional //todo test
     public void savePlayer(PlayerDTO playerDTO) {
-        Optional<Player> existingPlayerOptional = playerRepository.findByUsername(playerDTO.username());
-        if (existingPlayerOptional.isPresent()) {
-            throw new PlayerAlreadyExistsException(MessageFormat.format("Player with id: {0} already exists", playerDTO.id()));
-        }
-
         final Player player = playerDTOToPlayerMapper(playerDTO).toBuilder()
                 .wallet(Wallet.builder()
                         .id(UUID.randomUUID().toString())
@@ -55,6 +49,7 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     public void updatePlayer(String playerId, PlayerDTO playerDTO) {
+        //todo refactor to use mongoTemplate.findAndModify
         Optional<Player> optionalPlayer = playerRepository.findById(playerId);
         if (optionalPlayer.isPresent()) {
             Player updatedPlayer = playerDTOToPlayerMapper(playerDTO);
