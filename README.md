@@ -1,25 +1,18 @@
 # scalable-spring-microservice-demo
 
-### Add performance tests
+### Features added
+* Performance tests - Gatling
+* @Cacheable for leaderboard
+* Webflux applied to leaderboard endpoint
+* Reactive Mongo
 
-### Add actuator 
-
-### Add performance improvements
-1. performance tests
-2. @Async
-3. @Cacheable
-4. Completable futures
-5. reactive controller
-5. reactive mongo 
-6. indexes
-7. webflux
-8. add db data version for concurrent reads/writes
-9. run multiple nodes + load balancing
-
-### Add Features
-1. Security
-2. Integration tests
-3. Property tests
-4. Config server
-5. Docker image
-6. Kubernetes
+### Features to add
+* mongo indexes
+* add db data version for concurrent reads/writes
+* Docker image
+* run multiple nodes with kubernetes + load balancing
+* spring actuator for monitoring
+* Spring Security
+* Integration tests
+* Property tests
+* Config server

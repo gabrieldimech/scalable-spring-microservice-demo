@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
 import com.example.demo.model.BetOutcome;
+import reactor.core.publisher.Mono;
 
 public interface BetOutcomeService {
-    void saveBetOutcome(BetOutcome betOutcome);
+    Mono<BetOutcome> saveBetOutcome(BetOutcome betOutcome);
+    Mono<BetOutcome> findById(String uuid);
 }

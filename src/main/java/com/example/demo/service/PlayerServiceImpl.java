@@ -1,19 +1,17 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.*;
-import com.example.demo.exception.PlayerNotFoundException;
 import com.example.demo.model.Currency;
 import com.example.demo.model.Player;
 import com.example.demo.model.Wallet;
-import com.example.demo.model.WalletTransaction;
 import com.example.demo.repository.PlayerRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,6 +20,7 @@ public class PlayerServiceImpl implements PlayerService {
     private final WalletTransactionService walletTransactionService;
     private final BigDecimal STARTING_BALANCE = BigDecimal.valueOf(1000);
     private final Currency defaultCurrency = Currency.CREDIT;
+    private final Logger logger = LoggerFactory.getLogger(WalletTransactionServiceImpl.class);
 
     public PlayerServiceImpl(PlayerRepository playerRepository, WalletTransactionService walletTransactionService) {
         this.playerRepository = playerRepository;
@@ -29,8 +28,10 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    @Transactional //todo test
-    public void savePlayer(PlayerDTO playerDTO) {
+    @Transactional
+    //todo test transactions and investigate why calls are > 1200 ms
+    //since we have multiple db calls here we will need to investigate adding version field inorder to handle concurrency issues
+    public Mono<PlayerDTO> savePlayer(PlayerDTO playerDTO) {
         final Player player = playerDTOToPlayerMapper(playerDTO).toBuilder()
                 .wallet(Wallet.builder()
                         .id(UUID.randomUUID().toString())
@@ -41,54 +42,34 @@ public class PlayerServiceImpl implements PlayerService {
                 .build();
 
         //add new player
-        playerRepository.save(player);
-
-        //add deposit transaction
-        walletTransactionService.saveDepositTransaction(player.getWallet().getId(), player.getId(), STARTING_BALANCE, UUID.randomUUID().toString());
+        return playerRepository.insert(player)
+                .flatMap(p -> walletTransactionService.saveDepositTransaction(player.getWallet().getId(), player.getId(), STARTING_BALANCE, UUID.randomUUID().toString())
+                        .thenReturn(playerToDTOMapper(p)));
     }
 
     @Override
-    public void updatePlayer(String playerId, PlayerDTO playerDTO) {
-        //todo refactor to use mongoTemplate.findAndModify
-        Optional<Player> optionalPlayer = playerRepository.findById(playerId);
-        if (optionalPlayer.isPresent()) {
-            Player updatedPlayer = playerDTOToPlayerMapper(playerDTO);
-            playerRepository.save(updatedPlayer);
-        } else {
-            throw new PlayerNotFoundException(MessageFormat.format("Player with id: {0} not found", playerId));
-        }
+    public Mono<PlayerDTO> updatePlayer(String playerId, PlayerDTO playerDTO) {
+        Player updatedPlayer = playerDTOToPlayerMapper(playerDTO);
+        return playerRepository.update(updatedPlayer)
+                .map(this::playerToDTOMapper);
     }
 
     @Override
-    public Optional<PlayerDTO> findPlayer(String playerId) {
-        Optional<Player> optionalPlayer = playerRepository.findById(playerId);
+    public Mono<PlayerDTO> findPlayer(String playerId) {
+        Mono<Player> optionalPlayer = playerRepository.findById(playerId);
         return optionalPlayer.map(this::playerToDTOMapper);
     }
 
-    public WalletDTO walletToWalletDTO(Wallet wallet) {
-        return new WalletDTO(wallet.getId(), wallet.getPlayerId(), wallet.getBalance(), wallet.getCurrency());
+    @Override
+    public Mono<Boolean> deletePlayer(String playerId) {
+        return playerRepository.findById(playerId).flatMap(playerRepository::delete).then(Mono.fromCallable(() -> Boolean.TRUE)).onErrorComplete(throwable -> Boolean.FALSE);
     }
 
     @Override
-    public void deletePlayer(String playerId) {
-        Optional<Player> optionalPlayer = playerRepository.findById(playerId);
-        if (optionalPlayer.isPresent()) {
-            playerRepository.delete(optionalPlayer.get());
-        } else {
-            throw new PlayerNotFoundException("Player with id:" + playerId + " not found");
-        }
-    }
-
-    @Override
-    public WalletSummaryDTO findPlayerWalletTransactions(String playerId) {
-        Optional<PlayerDTO> playerDTOOptional = findPlayer(playerId);
-        if (playerDTOOptional.isEmpty()) {
-            throw new PlayerNotFoundException("Player with id:" + playerId + " not found");
-        }
-        PlayerDTO playerDTO = playerDTOOptional.get();
-        List<WalletTransaction> transactionList = walletTransactionService.findByPlayerId(playerId);
-
-        return new WalletSummaryDTO(playerDTO.wallet().getId(), playerId, playerDTO.wallet().getBalance(), playerDTO.wallet().getCurrency(), transactionList);
+    public Mono<WalletSummaryDTO> findPlayerWalletTransactions(String playerId) {
+        return findPlayer(playerId).flatMap(p -> Mono.from(walletTransactionService.findByPlayerId(playerId)
+                .collectList()
+                .flatMap(walletTransactions -> Mono.just(new WalletSummaryDTO(p.wallet().getId(), playerId, p.wallet().getBalance(), p.wallet().getCurrency(), walletTransactions)))));
     }
 
     private Player playerDTOToPlayerMapper(PlayerDTO playerDTO) {

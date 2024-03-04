@@ -11,7 +11,7 @@ public class NumbersGameResult extends GameResult {
     private final int betRequestNumber;
     private final int betResultNumber;
 
-    NumbersGameResult(BigDecimal betAmount, BigDecimal winAmount, int betRequestNumber, int betResultNumber) {
+    public NumbersGameResult(BigDecimal betAmount, BigDecimal winAmount, int betRequestNumber, int betResultNumber) {
         super(betAmount, winAmount);
         this.betRequestNumber = betRequestNumber;
         this.betResultNumber = betResultNumber;

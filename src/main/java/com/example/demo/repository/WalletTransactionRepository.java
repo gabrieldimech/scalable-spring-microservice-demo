@@ -1,11 +1,9 @@
 package com.example.demo.repository;
 
-import com.example.demo.model.Player;
 import com.example.demo.model.WalletTransaction;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
-
-public interface WalletTransactionRepository extends MongoRepository<WalletTransaction, String> {
-    List<WalletTransaction> findByPlayerId(String playerId);
+public interface WalletTransactionRepository extends ReactiveMongoRepository<WalletTransaction, String> {
+    Flux<WalletTransaction> findByPlayerId(String playerId);
 }
