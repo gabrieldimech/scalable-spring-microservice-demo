@@ -32,7 +32,7 @@ public class PlayerRequestSimulation extends Simulation {
                             "surname", UUID.randomUUID().toString(),
                             "username", UUID.randomUUID().toString(),
                             "email", UUID.randomUUID().toString(),
-                            "betReferenceIds", IntStream.range(0, 10).mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList())
+                            "betReferenceIds", IntStream.range(0, 1).mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList())
                     )
             ).iterator();
 
@@ -61,7 +61,7 @@ public class PlayerRequestSimulation extends Simulation {
             );
 
     public PlayerRequestSimulation() {
-        this.setUp(scn.injectOpen(constantUsersPerSec(100).during(Duration.ofSeconds(10))))
+        this.setUp(scn.injectOpen(constantUsersPerSec(200).during(Duration.ofSeconds(10))))
                 .protocols(httpProtocol);
     }
 }
